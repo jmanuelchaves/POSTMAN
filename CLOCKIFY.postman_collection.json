@@ -1,0 +1,959 @@
+{
+	"info": {
+		"_postman_id": "c0d696b6-9d74-4c20-965b-048ac2990945",
+		"name": "CLOCKIFY",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48532007",
+		"_collection_link": "https://juanmanuel-chaves-9920732.postman.co/workspace/Juan-Manuel-Chaves's-Workspace~9db44688-4244-4379-89de-e12963ba887d/collection/48532007-c0d696b6-9d74-4c20-965b-048ac2990945?action=share&source=collection_link&creator=48532007"
+	},
+	"item": [
+		{
+			"name": "Workspace happy path",
+			"item": [
+				{
+					"name": "All Workspaces",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests for GET https://api.clockify.me/api/v1/workspaces\r",
+									"// Robust parsing with error handling\r",
+									"let isJson = false;\r",
+									"let data = null;\r",
+									"\r",
+									"pm.test(\"Status code is 200\", function () {\r",
+									"  pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response is JSON\", function () {\r",
+									"  try {\r",
+									"    data = pm.response.json();\r",
+									"    isJson = Array.isArray(data) || typeof data === 'object';\r",
+									"  } catch (e) {\r",
+									"    isJson = false;\r",
+									"  }\r",
+									"  pm.expect(isJson, \"Response must be valid JSON\").to.be.true;\r",
+									"});\r",
+									"\r",
+									"// If not JSON, short-circuit the remaining tests gracefully\r",
+									"if (!isJson) {\r",
+									"  // Stop further tests to avoid false failures\r",
+									"  pm.test(\"Skipping schema tests due to non-JSON response\", function () {\r",
+									"    pm.expect(isJson).to.be.true;\r",
+									"  });\r",
+									"} else {\r",
+									"  // Ensure array and non-empty\r",
+									"  pm.test(\"Response is an array with length > 0\", function () {\r",
+									"    pm.expect(Array.isArray(data), \"Top-level should be an array\").to.be.true;\r",
+									"    pm.expect(data.length, \"Array should not be empty\").to.be.greaterThan(0);\r",
+									"  });\r",
+									"\r",
+									"  // Validate each workspace object\r",
+									"  pm.test(\"Each workspace has non-empty id and name\", function () {\r",
+									"    if (!Array.isArray(data)) {\r",
+									"      pm.expect.fail(\"Top-level response is not an array\");\r",
+									"      return;\r",
+									"    }\r",
+									"    data.forEach((ws, idx) => {\r",
+									"      pm.expect(ws, `Item at index ${idx} should be an object`).to.be.an(\"object\");\r",
+									"      pm.expect(ws).to.have.property(\"id\");\r",
+									"      pm.expect(ws.id, `workspace.id at index ${idx} should be a non-empty string`).to.be.a(\"string\").and.to.have.length.greaterThan(0);\r",
+									"      pm.expect(ws).to.have.property(\"name\");\r",
+									"      pm.expect(ws.name, `workspace.name at index ${idx} should be a non-empty string`).to.be.a(\"string\").and.to.have.length.greaterThan(0);\r",
+									"    });\r",
+									"  });\r",
+									"\r",
+									"  // Validate memberships array and required fields inside each membership\r",
+									"  pm.test(\"Each workspace has memberships with userId and membershipStatus\", function () {\r",
+									"    if (!Array.isArray(data)) {\r",
+									"      pm.expect.fail(\"Top-level response is not an array\");\r",
+									"      return;\r",
+									"    }\r",
+									"    data.forEach((ws, idx) => {\r",
+									"      pm.expect(ws, `workspace at index ${idx}`).to.have.property(\"memberships\");\r",
+									"      pm.expect(ws.memberships, `memberships at index ${idx} should be an array`).to.be.an(\"array\");\r",
+									"      ws.memberships.forEach((m, mIdx) => {\r",
+									"        pm.expect(m, `membership at ws[${idx}].memberships[${mIdx}]`).to.be.an(\"object\");\r",
+									"        pm.expect(m, `membership at ws[${idx}].memberships[${mIdx}] should have userId`).to.have.property(\"userId\");\r",
+									"        pm.expect(m.userId, `userId at ws[${idx}].memberships[${mIdx}] should be a non-empty string`).to.be.a(\"string\").and.to.have.length.greaterThan(0);\r",
+									"        pm.expect(m, `membership at ws[${idx}].memberships[${mIdx}] should have membershipStatus`).to.have.property(\"membershipStatus\");\r",
+									"        pm.expect(m.membershipStatus, `membershipStatus at ws[${idx}].memberships[${mIdx}] should be a non-empty string`).to.be.a(\"string\").and.to.have.length.greaterThan(0);\r",
+									"      });\r",
+									"    });\r",
+									"  });\r",
+									"\r",
+									"  // Save first workspace id to environment variable\r",
+									"  pm.test(\"Save first workspace id to environment variable\", function () {\r",
+									"    pm.expect(Array.isArray(data) && data.length > 0, \"Array must be non-empty to save first id\").to.be.true;\r",
+									"    const firstId = data[0] && data[0].id;\r",
+									"    pm.expect(firstId, \"First workspace should have an id\").to.be.a(\"string\").and.to.have.length.greaterThan(0);\r",
+									"    pm.environment.set(\"firstWorkspaceId\", firstId);\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"// Performance test\r",
+									"pm.test(\"Response time is below 2000 ms\", function () {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						},
+						"description": "DOCUMENTACIÓN:\n\n[https://docs.clockify.me/#tag/User/operation/createUserRole](https://docs.clockify.me/#tag/User/operation/createUserRole)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Workspace",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Lechuga\",\r\n  \"organizationId\": \"68fea8bd8bcd0145e8075e63\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Project happy path",
+			"item": [
+				{
+					"name": "Get all projects on workspace",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a new Project",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();\r",
+									"pm.globals.set(\"projectid\", responseJson.id);\r",
+									"//toma el id del proyecto y lo guarda en la variable de entorno projectid."
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"LOCURA\",\r\n  \"isPublic\": true,\r\n  \"billable\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Project by ID",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects/{{projectid}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects",
+								"{{projectid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects/{{projectid}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects",
+								"{{projectid}}"
+							]
+						},
+						"description": "El proyecto tiene que ser archivado primero"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Workspace ERRORS",
+			"item": [
+				{
+					"name": "All Workspaces Key inválida",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc3",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Workspace nombre vacío",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"\",\r\n  \"organizationId\": \"68fea8bd8bcd0145e8075e63\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Workspace nombre más de 50 caracteres",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce eu lectus sit amet purus blandit pharetra interdum sit amet purus.\",\r\n  \"organizationId\": \"68fea8bd8bcd0145e8075e63\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Workspace Organization ID inválida",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Lechuga\",\r\n  \"organizationId\": \"68fea8bd8bcd0145e8075e64\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Project ERRORS",
+			"item": [
+				{
+					"name": "Delete Project proyecto activo",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects/{{projectid}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects",
+								"{{projectid}}"
+							]
+						},
+						"description": "El proyecto tiene que ser archivado primero"
+					},
+					"response": []
+				},
+				{
+					"name": "Get all projects on workspace Key inválida",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc9",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all projects on workspace ID inválida",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/6930d5d8515c83ad851e0f66/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"6930d5d8515c83ad851e0f66",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a new Project nombre vacío",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"\",\r\n  \"isPublic\": true,\r\n  \"billable\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add a new Project más de 250 caracteres",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Sed aliquam placerat magna ornare tristique. Pellentesque dignissim nisi sit amet tempus hendrerit. Nunc molestie nec leo nec viverra. Aliquam erat volutpat. Cras lobortis mi lacus, at laoreet neque placerat sit amet. Suspendisse ullamcorper mattis ultricies. Donec luctus interdum orci non pulvinar. Cras id ornare sem, in vestibulum ipsum. Aliquam erat volutpat. Nam semper lectus lacus, eu tempus sem vestibulum et. Etiam vitae ante vitae dolor pretium commodo eget eget ante. In aliquet turpis quis nibh fermentum mollis. Vestibulum sollicitudin, sem quis ornare volutpat, ante lectus condimentum massa, a bibendum ligula nisl in sapien.\",\r\n  \"isPublic\": true,\r\n  \"billable\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/projects",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Client",
+			"item": [
+				{
+					"name": "Add new client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();\r",
+									"pm.globals.set(\"clientid\", responseJson.id);\r",
+									"//toma el id del client y lo guarda en la variable de entorno clientid."
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"8888@example.com\",\r\n    \"name\": \"88888\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/clients",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"clients"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete New Client",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/clients/{{clientid}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"clients",
+								"{{clientid}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clients from workspace",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "ODc0MjQxNzEtNmNlNy00ZmE4LTk4MWMtMDRlYzQ0MzYyYTc2",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.clockify.me/api/v1/workspaces/{{workspaceid}}/clients",
+							"protocol": "https",
+							"host": [
+								"api",
+								"clockify",
+								"me"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workspaces",
+								"{{workspaceid}}",
+								"clients"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
